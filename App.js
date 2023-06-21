@@ -11,18 +11,32 @@ var client = new Paho.Client(
 
 export default function App() {
 
-  const [value, setValue] = useState(0);
+  const [chuva, setChuva] = useState("");
+  const [janela, setJanela] = useState("");
 
   function onMessage(message) {
-    if (message.destinationName === "teste")
-        setValue(parseInt(message.payloadString));
+    if (message.destinationName === "chuva") {
+      setChuva(message.payloadString);
+      if (message.payloadString == "Esta a chover!") {
+        setJanela("Janela Fechada");
+      } else {
+        setJanela("Janela Aberta");
+      }}
+    else if (message.destinationName === "janela") {
+      if (message.payloadString === "1") {
+        setJanela("Janela Aberta")
+      } else {
+        setJanela("Janela Fechada")
+      }
+    }
   }
 
   useEffect(() => {
     client.connect( {
       onSuccess: () => { 
       console.log("Connected!");
-      client.subscribe("teste");
+      client.subscribe("chuva");
+      client.subscribe("janela");
       client.onMessageArrived = onMessage;
     },
     onFailure: () => {
@@ -31,16 +45,23 @@ export default function App() {
   });
   }, [])
 
-  function changeValue(c) {
-    const message = new Paho.Message((value + 1).toString());
-    message.destinationName = "teste";
+  function changeValue(c, a) {
+    const message = new Paho.Message(a);
+    message.destinationName = "janela";
     c.send(message);
   }
 
   return (
     <View style={styles.container}>
-      <Text>Value is: {value}</Text>
-      <Button onPress={() => { changeValue(client);} } title="Press Me"/>
+      <View style={{margin:10}}>
+      <Text style={{fontWeight: "semi-bold", fontSize: "25px"}}>Projeto IOT - Eduardo Gomes e André Vala</Text></View>
+      <View style={{margin:10}}>
+      <Button onPress={() => { changeValue(client, "1");} } title="Abrir Janela"/></View>
+      <Button onPress={() => { changeValue(client, "0");} } title="Fechar Janela"/>
+      <View style={{margin:10}}>
+      <Text>{chuva}</Text></View>
+      <View style={{margin:10}}>
+      <Text>{janela}</Text></View>
       <StatusBar style="auto" />
     </View>
   );
